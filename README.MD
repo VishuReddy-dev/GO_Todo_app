@@ -1,6 +1,6 @@
 # Go Todo Application
 
-![Go Logo](https://golang.org/doc/gopher/appengine/gopher.png)
+![Go Logo](https://www.techasoft.com/blog/2019/12/1576592374.png)
 
 ## Overview
 
