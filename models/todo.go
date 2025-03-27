@@ -3,53 +3,73 @@ package models
 import (
 	"errors"
 
-	"github.com/google/uuid"
+	"github.com/VishuReddy-dev/crud/database"
 )
 type Todo struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Completed   bool   `json:"completed"`
+	CreatedAt   string `json:"created_at"`
 }
-var Todos []Todo
-func CreateTodo(title, description string) Todo {
-	todo:=Todo{
-		ID:uuid.New().String(),
-		Title:title,
-		Description:description,
-		Completed:false,
+
+func CreateTodo(title, description string) (Todo,error) {
+	var todo Todo
+	err := database.DB.QueryRow(
+		"INSERT INTO todos (title,description) VALUES ($1,$2) RETURNING id,title,description,completed,created_at",
+		title, description,
+	).Scan(&todo.ID, &todo.Title, &todo.Description, &todo.Completed, &todo.CreatedAt)
+	return todo, err
+}
+func GetAllTodos() ([]Todo,error) {
+	rows,err:=database.DB.Query("SELECT * FROM todos")
+	if err!=nil{
+		return nil,err
 	}
-	Todos=append(Todos,todo)
-	return todo
-}
-func GetAllTodos() []Todo {
-	return Todos
+	defer rows.Close()
+	var todos []Todo
+	for rows.Next(){
+		var todo Todo
+		err :=rows.Scan(&todo.ID,&todo.Title,&todo.Description,&todo.Completed,&todo.CreatedAt)
+		if err!=nil{
+			return nil,err
+		}
+		todos=append(todos, todo)
+	}
+	return todos,nil
 }
 func GetTodoById(id string) (Todo,error) {
-	for _,todo:=range Todos{
-		if todo.ID==id{
-			
+	row,err:=database.DB.Query("SELECT * FROM todos WHERE id=$1",id)
+	if err!=nil{
+		return Todo{},err
+	}
+	defer row.Close()
+	var todo Todo
+	if row.Next(){
+		err=row.Scan(&todo.ID,&todo.Title,&todo.Description,&todo.Completed,&todo.CreatedAt)
+		if err!=nil{
+			return Todo{},err
 		}
+		return todo,nil
 	}
 	return Todo{},errors.New("todo not found")
 }
 func UpdateTodo(id string,title,description string,completed bool)(Todo,bool){
-	for i,todo:=range Todos{
-		if todo.ID==id{
-			Todos[i].Title=title
-			Todos[i].Description=description
-			Todos[i].Completed=completed
-			return Todos[i],true
-				}
+	_,err:=database.DB.Exec("UPDATE todos SET title=$1,description=$2,completed=$3 WHERE id=$4",title,description,completed,id)
+	if err!=nil{
+		return Todo{},false;
 	}
-	return Todo{},false
+	todo,err:=GetTodoById(id)
+	if err!=nil{
+		return Todo{},false;
+	}
+	return todo,true;
 }
 func DeleteTodo(id string) bool {
-	for i,t:=range Todos{
-		if t.ID==id{
-			Todos=append(Todos[:i],Todos[i+1:]...)
-			return true
-		}
-	}
-	return false
+	_,err:=database.DB.Exec("DELETE FROM todos WHERE id=$1",id)
+	// if err!=nil{
+	// 	return false
+	// }
+	// return true
+	return err==nil;
 }

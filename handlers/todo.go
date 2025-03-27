@@ -5,7 +5,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 func GetTodos(c *fiber.Ctx) error {
-	return c.JSON(models.GetAllTodos())
+	todos,err:=models.GetAllTodos()
+	if err!=nil{
+		return c.Status(500).JSON(fiber.Map{"error":"Failed to fetch todos"})
+	}
+	return c.Status(200).JSON(todos)
+	// return c.JSON(models.GetAllTodos())
 }
 func CreateTodo(c *fiber.Ctx) error {
 	type request struct {
@@ -16,7 +21,10 @@ func CreateTodo(c *fiber.Ctx) error {
 	if err:=c.BodyParser(&body); err!=nil{
 		return c.Status(400).JSON(fiber.Map{"error":"Inavlid request"})
 	}
-	todo:=models.CreateTodo(body.Title,body.Description)
+	todo,err:=models.CreateTodo(body.Title,body.Description)
+	if err!=nil{
+		return c.Status(500).JSON(fiber.Map{"error":"Failed to create todo"})
+	}
 	return c.Status(201).JSON(todo)
 }
 func UpdateTodo(c *fiber.Ctx) error{
@@ -42,4 +50,12 @@ func DeleteTodo(c *fiber.Ctx) error{
 		return c.Status(404).JSON(fiber.Map{"error":"Todo not found"})
 	}
 	return c.JSON(fiber.Map{"message":"Todo deleted"})
+}
+func GetTodoById(c *fiber.Ctx) error{
+	id:=c.Params("id")
+	todo,err:=models.GetTodoById(id)
+	if err!=nil{
+		return c.Status(404).JSON(fiber.Map{"error":"Todo not found"})
+	}
+	return c.JSON(todo)
 }
