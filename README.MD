@@ -1,6 +1,6 @@
 # Go Todo Application
 
-![Go Logo](https://golang.org/doc/gopher/appengine/gopher.png)
+![Go Logo](https://icon.icepanel.io/Technology/svg/Go.svg)
 
 ## Overview
 
